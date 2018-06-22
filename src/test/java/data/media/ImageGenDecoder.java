@@ -3,16 +3,14 @@ package data.media;
 import java.lang.reflect.Type;
 
 import com.alibaba.fastjson.parser.DefaultJSONParser;
-import com.alibaba.fastjson.parser.DefaultJSONParser.ResolveTask;
-import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.parser.JSONLexerBase;
-import com.alibaba.fastjson.parser.JSONToken;
 import com.alibaba.fastjson.parser.ParseContext;
-import com.alibaba.fastjson.parser.deserializer.ASMJavaBeanDeserializer;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.parser.deserializer.JavaBeanDeserializer;
 import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
 
-public class ImageGenDecoder extends ASMJavaBeanDeserializer implements ObjectDeserializer {
+public class ImageGenDecoder extends JavaBeanDeserializer implements ObjectDeserializer {
     private char[] size_gen_prefix__ = "\"size\":".toCharArray();
     private char[] uri_gen_prefix__ = "\"uri\":".toCharArray();
     private char[] title_gen_prefix__ = "\"title\":".toCharArray();
@@ -21,10 +19,11 @@ public class ImageGenDecoder extends ASMJavaBeanDeserializer implements ObjectDe
     
     private ObjectDeserializer uri_gen_deser__;
     private ObjectDeserializer title_gen_deser__;
+    private ObjectDeserializer size_gen_deser__;
     
     public ImageGenDecoder (ParserConfig config, Class clazz) {
         super(config, clazz);
-        
+        size_gen_deser__ = config.getDeserializer(data.media.Image.Size.class);
     }
     
     public Object createInstance(DefaultJSONParser parser, Type type) {
@@ -38,7 +37,7 @@ public class ImageGenDecoder extends ASMJavaBeanDeserializer implements ObjectDe
             return super.deserialze(parser, type, fieldName);
         }
         
-        if (isSupportArrayToBean(lexer)) {
+        if (lexer.isEnabled(Feature.SupportArrayToBean)) {
             // deserialzeArrayMapping
         }
         
@@ -93,10 +92,7 @@ public class ImageGenDecoder extends ASMJavaBeanDeserializer implements ObjectDe
             
         }
         if ((!endFlag) && (!restFlag)) {
-            String size_gen_enum_name = lexer.scanFieldSymbol(size_gen_prefix__, parser.getSymbolTable());
-            if (size_gen_enum_name == null) {
-                size_gen = data.media.Image.Size.valueOf(size_gen_enum_name);
-            }
+            size_gen = (data.media.Image.Size) this.scanEnum(lexer, size_gen_prefix__, size_gen_deser__);
             if(lexer.matchStat > 0) {
                 _asm_flag_0 |= 2;
                 matchedCount++;
@@ -173,7 +169,7 @@ public class ImageGenDecoder extends ASMJavaBeanDeserializer implements ObjectDe
         }
         
         if (restFlag) {
-            return super.parseRest(parser, type, fieldName, instance);
+            return super.parseRest(parser, type, fieldName, instance, 0, new int[0]);
         }
         
         return instance;

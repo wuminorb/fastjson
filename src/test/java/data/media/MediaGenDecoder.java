@@ -3,16 +3,14 @@ package data.media;
 import java.lang.reflect.Type;
 
 import com.alibaba.fastjson.parser.DefaultJSONParser;
-import com.alibaba.fastjson.parser.DefaultJSONParser.ResolveTask;
-import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.parser.JSONLexerBase;
-import com.alibaba.fastjson.parser.JSONToken;
 import com.alibaba.fastjson.parser.ParseContext;
-import com.alibaba.fastjson.parser.deserializer.ASMJavaBeanDeserializer;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.parser.deserializer.JavaBeanDeserializer;
 import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
 
-public class MediaGenDecoder extends ASMJavaBeanDeserializer implements ObjectDeserializer {
+public class MediaGenDecoder extends JavaBeanDeserializer implements ObjectDeserializer {
     private char[] size_gen_prefix__ = "\"size\":".toCharArray();
     private char[] uri_gen_prefix__ = "\"uri\":".toCharArray();
     private char[] title_gen_prefix__ = "\"title\":".toCharArray();
@@ -31,10 +29,12 @@ public class MediaGenDecoder extends ASMJavaBeanDeserializer implements ObjectDe
     private Type persons_gen_list_item_type__ = java.lang.String.class;
     private ObjectDeserializer copyright_gen_deser__;
     private ObjectDeserializer format_gen_deser__;
+    private ObjectDeserializer player_gen_deser__;
     
     public MediaGenDecoder (ParserConfig config, Class clazz) {
         super(config, clazz);
-        
+        // data.media.Media.Player
+        player_gen_deser__ = config.getDeserializer(data.media.Media.Player.class);
     }
     
     public Object createInstance(DefaultJSONParser parser, Type type) {
@@ -48,7 +48,7 @@ public class MediaGenDecoder extends ASMJavaBeanDeserializer implements ObjectDe
             return super.deserialze(parser, type, fieldName);
         }
         
-        if (isSupportArrayToBean(lexer)) {
+        if (lexer.isEnabled(Feature.SupportArrayToBean)) {
             // deserialzeArrayMapping
         }
         
@@ -191,10 +191,7 @@ public class MediaGenDecoder extends ASMJavaBeanDeserializer implements ObjectDe
             
         }
         if ((!endFlag) && (!restFlag)) {
-            String player_gen_enum_name = lexer.scanFieldSymbol(player_gen_prefix__, parser.getSymbolTable());
-            if (player_gen_enum_name == null) {
-                player_gen = data.media.Media.Player.valueOf(player_gen_enum_name);
-            }
+            player_gen = (data.media.Media.Player) this.scanEnum(lexer, player_gen_prefix__, player_gen_deser__);
             if(lexer.matchStat > 0) {
                 _asm_flag_0 |= 64;
                 matchedCount++;
@@ -309,7 +306,7 @@ public class MediaGenDecoder extends ASMJavaBeanDeserializer implements ObjectDe
         }
         
         if (restFlag) {
-            return super.parseRest(parser, type, fieldName, instance);
+            return super.parseRest(parser, type, fieldName, instance, 0, new int[0]);
         }
         
         return instance;

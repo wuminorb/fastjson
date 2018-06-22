@@ -4,15 +4,15 @@ import java.lang.reflect.Type;
 
 import com.alibaba.fastjson.parser.DefaultJSONParser;
 import com.alibaba.fastjson.parser.DefaultJSONParser.ResolveTask;
-import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.parser.JSONLexerBase;
 import com.alibaba.fastjson.parser.JSONToken;
 import com.alibaba.fastjson.parser.ParseContext;
-import com.alibaba.fastjson.parser.deserializer.ASMJavaBeanDeserializer;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.parser.deserializer.JavaBeanDeserializer;
 import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
 
-public class DepartmentCodec extends ASMJavaBeanDeserializer implements ObjectDeserializer {
+public class DepartmentCodec extends JavaBeanDeserializer implements ObjectDeserializer {
     private char[] name_gen_prefix__ = "\"name\":".toCharArray();
     private char[] root_gen_prefix__ = "\"root\":".toCharArray();
     private char[] type_gen_prefix__ = "\"type\":".toCharArray();
@@ -24,10 +24,11 @@ public class DepartmentCodec extends ASMJavaBeanDeserializer implements ObjectDe
     private ObjectDeserializer leader_gen_deser__;
     private ObjectDeserializer members_gen_list_item_deser__;
     private Type members_gen_list_item_type__ = com.alibaba.json.test.codegen.Employee.class;
+    private ObjectDeserializer type_gen_deser__;
     
     public DepartmentCodec (ParserConfig config, Class clazz) {
         super(config, clazz);
-        
+        type_gen_deser__ = config.getDeserializer(com.alibaba.json.test.codegen.DepartmentType.class);
     }
     
     public Object createInstance(DefaultJSONParser parser, Type type) {
@@ -41,7 +42,7 @@ public class DepartmentCodec extends ASMJavaBeanDeserializer implements ObjectDe
             return super.deserialze(parser, type, fieldName);
         }
         
-        if (isSupportArrayToBean(lexer)) {
+        if (lexer.isEnabled(Feature.SupportArrayToBean)) {
             // deserialzeArrayMapping
         }
         
@@ -96,8 +97,8 @@ public class DepartmentCodec extends ASMJavaBeanDeserializer implements ObjectDe
                 matchedCount++;
                 if(parser.getResolveStatus() == DefaultJSONParser.NeedToResolve) {
                     ResolveTask resolveTask = parser.getLastResolveTask();
-                    resolveTask.setOwnerContext(parser.getContext());
-                    resolveTask.setFieldDeserializer(this.getFieldDeserializer("leader"));
+                    resolveTask.ownerContext = parser.getContext();
+                    resolveTask.fieldDeserializer = this.getFieldDeserializer("leader");
                     parser.setResolveStatus(DefaultJSONParser.NONE);
                 }
             }
@@ -192,10 +193,7 @@ public class DepartmentCodec extends ASMJavaBeanDeserializer implements ObjectDe
             
         }
         if ((!endFlag) && (!restFlag)) {
-            String type_gen_enum_name = lexer.scanFieldSymbol(type_gen_prefix__, parser.getSymbolTable());
-            if (type_gen_enum_name == null) {
-                type_gen = com.alibaba.json.test.codegen.DepartmentType.valueOf(type_gen_enum_name);
-            }
+            type_gen = (com.alibaba.json.test.codegen.DepartmentType) this.scanEnum(lexer, type_gen_prefix__, type_gen_deser__);
             if(lexer.matchStat > 0) {
                 _asm_flag_0 |= 32;
                 matchedCount++;
@@ -210,7 +208,7 @@ public class DepartmentCodec extends ASMJavaBeanDeserializer implements ObjectDe
         }
         
         if (restFlag) {
-            return super.parseRest(parser, type, fieldName, instance);
+            return super.parseRest(parser, type, fieldName, instance, 0, new int[0]);
         }
         
         return instance;
